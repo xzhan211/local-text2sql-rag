@@ -171,7 +171,7 @@ local-text2sql-rag/
 - `app/vectorstore/kb_manager.py` — two-index manager
 - `tests/test_embedder.py` + `tests/test_kb_manager.py`
 
-### Phase 2 — LLM + SQL Generation ✅ DONE (committed: TBD)
+### Phase 2 — LLM + SQL Generation ✅ DONE (committed: 5cd0212)
 Files built:
 1. `app/llm/prompts.py` — four builder functions: `build_sql_gen_prompt`, `build_nlq_gen_prompt`, `build_critic_prompt`, `build_lesson_gen_prompt`. Each returns `(system, human)` tuple. `SCHEMA` constant with DuckDB DDL + inline value hints.
 2. `app/llm/claude_client.py` — `LLMClient.complete(system, human, temperature) -> str`, `LLMError`. Uses `anthropic.types.TextBlock` isinstance check for type-safe response parsing.
