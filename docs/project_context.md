@@ -171,26 +171,21 @@ local-text2sql-rag/
 - `app/vectorstore/kb_manager.py` — two-index manager
 - `tests/test_embedder.py` + `tests/test_kb_manager.py`
 
-### Phase 2 — LLM + SQL Generation 🔲 NEXT
-Files (in build order):
-1. `app/llm/prompts.py` — SQL_GEN_PROMPT, NLQ_GEN_PROMPT, CRITIC_PROMPT, LESSON_GEN_PROMPT
-2. `app/llm/claude_client.py` — `complete(prompt, temperature) -> str`, `LLMError`
-3. `app/sql/generator.py` — orchestrates prompt + client, first attempt vs retry
-4. `app/sql/validator.py` — sqlglot: reject DDL/DML, SELECT/WITH only
-5. `app/sql/comparator.py` — `compare(pred, gold) -> {ast_match: bool, token_sim: float}`
+### Phase 2 — LLM + SQL Generation ✅ DONE (committed: TBD)
+Files built:
+1. `app/llm/prompts.py` — four builder functions: `build_sql_gen_prompt`, `build_nlq_gen_prompt`, `build_critic_prompt`, `build_lesson_gen_prompt`. Each returns `(system, human)` tuple. `SCHEMA` constant with DuckDB DDL + inline value hints.
+2. `app/llm/claude_client.py` — `LLMClient.complete(system, human, temperature) -> str`, `LLMError`. Uses `anthropic.types.TextBlock` isinstance check for type-safe response parsing.
+3. `app/sql/generator.py` — `generate_sql(client, nlq, examples, lessons=None) -> str`. Temperature derived from `lessons is not None` (0.0 first attempt, 0.3 retry).
+4. `app/sql/validator.py` — `validate_sql(sql) -> (bool, str | None)`. sqlglot parse + SELECT/WITH safety check. Returns error message string on failure.
+5. `app/sql/comparator.py` — `compare(pred, gold) -> {ast_match: bool, token_sim: float}`. sqlglot DuckDB dialect normalization + Jaccard token similarity.
+- `tests/test_comparator.py`, `tests/test_claude_client.py`, `tests/test_generator.py` — 57 tests, all passing.
 
-**Acceptance criteria:**
-- `generator.generate_sql(nlq, examples)` returns valid SELECT SQL
-- `comparator.compare(pred, gold)` returns `{ast_match: bool, token_sim: float}`
+**Key implementation notes:**
+- `_make_client()` in tests returns `(LLMClient, MagicMock)` tuple — mock is explicit so Pylance doesn't complain about attribute access on `anthropic.Anthropic` type
+- `validator.py` returns `(bool, str | None)` not just `bool` — error message used by lesson generator
+- `comparator.py` uses `dialect="duckdb"` for normalization; parse failure → `ast_match=False`, token_sim still computed
 
-**Must-learn concepts (already taught):**
-- Few-shot prompting — why retrieved examples help, why bad examples hurt
-- Constrained output prompt engineering — system rules + defensive fence-stripping
-- sqlglot AST — why string comparison fails, how normalization works
-- Token similarity (Jaccard) — soft signal for partial credit / failure diagnosis
-- validator.py role — last gate before SQL hits DuckDB, never corrects only rejects
-
-### Phase 3 — Lesson Schema + Critic 🔲
+### Phase 3 — Lesson Schema + Critic 🔲 NEXT
 - `app/lessons/critic.py` — `analyze(nlq, pred_sql, gold_sql) -> Lesson`
 - `app/lessons/generator.py` — LLM call to produce structured Lesson JSON
 - **Must-learn:** what makes a lesson reusable vs too specific
