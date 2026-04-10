@@ -185,12 +185,18 @@ Files built:
 - `validator.py` returns `(bool, str | None)` not just `bool` — error message used by lesson generator
 - `comparator.py` uses `dialect="duckdb"` for normalization; parse failure → `ast_match=False`, token_sim still computed
 
-### Phase 3 — Lesson Schema + Critic 🔲 NEXT
-- `app/lessons/critic.py` — `analyze(nlq, pred_sql, gold_sql) -> Lesson`
-- `app/lessons/generator.py` — LLM call to produce structured Lesson JSON
-- **Must-learn:** what makes a lesson reusable vs too specific
+### Phase 3 — Lesson Schema + Critic ✅ DONE (committed: TBD)
+Files built:
+1. `app/lessons/critic.py` — `analyze(client, nlq, pred_sql, gold_sql) -> str`. Calls `build_critic_prompt`, returns raw numbered error list. Temperature=0.0.
+2. `app/lessons/generator.py` — `generate_lesson(client, nlq, pred_sql, gold_sql, errors) -> Lesson`. Two-step: `_extract_json` (regex finds JSON in prose) → `_parse_lesson` (json.loads + Pydantic). `LessonGenerationError` carries `raw_output` for debugging.
+- `tests/test_critic.py`, `tests/test_lesson_generator.py` — 28 tests, all passing.
 
-### Phase 4 — Evaluation Loop + Metrics 🔲
+**Key implementation notes:**
+- Two-step critic → lesson: critic extracts specific errors first; lesson generator abstracts them into a generalizable rule. One-shot produces over-specific lessons.
+- `_extract_json` and `_parse_lesson` are separate private helpers so tests can unit-test each step independently.
+- `LessonGenerationError` (not `LLMError`) signals parse/validation failure — eval loop uses this distinction to mark hard failures without crashing.
+
+### Phase 4 — Evaluation Loop + Metrics 🔲 NEXT
 - `app/evaluation/eval_loop.py`
 - `app/evaluation/metrics.py`
 - **Must-learn:** pass@k, retrieval-based confidence, lesson utilization rate
