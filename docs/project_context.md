@@ -185,7 +185,7 @@ Files built:
 - `validator.py` returns `(bool, str | None)` not just `bool` — error message used by lesson generator
 - `comparator.py` uses `dialect="duckdb"` for normalization; parse failure → `ast_match=False`, token_sim still computed
 
-### Phase 3 — Lesson Schema + Critic ✅ DONE (committed: TBD)
+### Phase 3 — Lesson Schema + Critic ✅ DONE (committed: 9b9920c)
 Files built:
 1. `app/lessons/critic.py` — `analyze(client, nlq, pred_sql, gold_sql) -> str`. Calls `build_critic_prompt`, returns raw numbered error list. Temperature=0.0.
 2. `app/lessons/generator.py` — `generate_lesson(client, nlq, pred_sql, gold_sql, errors) -> Lesson`. Two-step: `_extract_json` (regex finds JSON in prose) → `_parse_lesson` (json.loads + Pydantic). `LessonGenerationError` carries `raw_output` for debugging.
