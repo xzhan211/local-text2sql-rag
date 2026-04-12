@@ -196,7 +196,7 @@ Files built:
 - `_extract_json` and `_parse_lesson` are separate private helpers so tests can unit-test each step independently.
 - `LessonGenerationError` (not `LLMError`) signals parse/validation failure — eval loop uses this distinction to mark hard failures without crashing.
 
-### Phase 4 — Evaluation Loop + Metrics ✅ DONE (committed: TBD)
+### Phase 4 — Evaluation Loop + Metrics ✅ DONE (committed: a6500c3)
 Files built:
 1. `app/evaluation/eval_loop.py` — `run_eval(client, kb, eval_pairs, training_run_id) -> EvalRunStats`. Full two-attempt loop: attempt 1 → validate → compare → if fail: attempt 2 with lessons → critic → lesson gen → store in Index 2. `EvalRunStats` carries per-item flags (`pass1`, `pass2`, `hard_failure`, `retried`, `had_lessons`), `sim1_scores`, `sim2_scores`, `latencies_ms`.
 2. `app/evaluation/metrics.py` — `compute_metrics(stats) -> MetricsReport`, `format_report(report) -> str`, `report_to_dict(report) -> dict`. All 9 metrics: pass@1/2, hard_failure, overall_pass_rate, kb_recovery_rate, lesson_utilization, avg_sim1/2, avg_latency_ms.
