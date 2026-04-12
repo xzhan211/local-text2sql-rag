@@ -28,7 +28,7 @@ Design decisions:
 """
 
 from app.llm.claude_client import LLMClient
-from app.llm.prompts import build_sql_gen_prompt
+from app.llm.prompts import build_sql_gen_prompt, build_nlq_gen_prompt
 from app.core.config import settings
 
 
@@ -68,3 +68,25 @@ def generate_sql(
 
     system, human = build_sql_gen_prompt(nlq, examples, lessons)
     return client.complete(system, human, temperature=temperature)
+
+
+def generate_nlq(client: LLMClient, sql: str) -> str:
+    """
+    Generate a natural language question from a SQL query.
+
+    Used by the training pipeline when the input CSV has a SQL column but
+    no NLQ column (or empty NLQ). The generated question is stored in SQLite
+    alongside the SQL and used as the retrieval key in Index 1.
+
+    Args:
+        client: An instantiated LLMClient.
+        sql:    The SQL query to reverse into a natural language question.
+
+    Returns:
+        A plain English question string, stripped of fences/whitespace.
+
+    Raises:
+        LLMError: if the Claude API call fails.
+    """
+    system, human = build_nlq_gen_prompt(sql)
+    return client.complete(system, human, temperature=0.0)

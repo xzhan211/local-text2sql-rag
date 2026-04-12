@@ -209,9 +209,20 @@ Files built:
 - `kb_recovery_rate=1.0` when no failures (vacuously correct)
 - `report_to_dict()` uses `dataclasses.asdict()` for JSON serialization into SQLite `training_runs.metrics`
 
-### Phase 5 — Training Pipeline 🔲 NEXT
-- `app/training/pipeline.py`
-- **Must-learn:** 80/20 split reasoning, backfill logic, why train-on-eval is acceptable here
+### Phase 5 — Training Pipeline ✅ DONE
+Files built:
+1. `app/sql/generator.py` — added `generate_nlq(client, sql) -> str` (temperature=0.0)
+2. `app/training/pipeline.py` — `run(csv_path, client=None, kb=None) -> MetricsReport`. 12-step orchestration: load CSV → fill NLQs → 80/20 split → insert_training_run → index 80% → save checkpoint → run_eval on 20% → backfill → save final → compute_metrics → finish_training_run → return.
+3. `tests/test_training_pipeline.py` — 26 tests, all passing.
+
+**Key implementation notes:**
+- `pipeline.py` is the orchestrator — it owns call order, delegates all domain logic to other modules.
+- `run(csv_path, client=None, kb=None)`: None creates defaults. Tests inject mocks.
+- `_load_csv`: 'sql' required, 'nlq' optional (defaults to ""), extra columns ignored, empty-sql rows dropped.
+- `_fill_missing_nlqs`: LLMError → skip row with `warnings.warn`. One bad row does not abort.
+- `_split`: raises `ValueError` if fewer than 2 pairs (can't satisfy ≥1 train + ≥1 eval). Uses `settings.random_seed` for reproducibility.
+- Index 2 is populated inside `run_eval` (step 7) — pass@1 failures trigger critic → lesson → `kb.add_lesson`.
+- `save_indexes()` called twice: before eval (checkpoint) and after backfill (final). Checkpoint protects Index 1 work if eval crashes mid-run.
 
 ### Phase 6 — Inference Pipeline 🔲
 - `app/inference/pipeline.py`
