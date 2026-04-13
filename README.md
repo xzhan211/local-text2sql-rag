@@ -77,6 +77,11 @@ API available at `http://localhost:8000`. Interactive docs at `http://localhost:
 ## API Endpoints
 
 ### `GET /health`
+
+```json
+curl -X GET http://localhost:8000/health
+```
+
 ```json
 {"status": "ok"}
 ```

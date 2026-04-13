@@ -13,14 +13,14 @@ How many orders are in 'pending' status?,SELECT COUNT(*) FROM orders WHERE statu
 How many products are there?,SELECT COUNT(*) FROM products
 What is the average product price?,SELECT AVG(price) FROM products
 How many products are in the 'Electronics' category?,SELECT COUNT(*) FROM products WHERE category = 'Electronics'
-What is the total revenue per country?,SELECT c.country, SUM(o.total_amount) AS total_revenue FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.country ORDER BY total_revenue DESC
-How many orders did each customer place?,SELECT c.name, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name ORDER BY order_count DESC
-Which customers have placed more than 2 orders?,SELECT c.name, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name HAVING COUNT(o.order_id) > 2
-What is the total quantity sold per product?,SELECT p.name, SUM(oi.quantity) AS total_qty FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id, p.name ORDER BY total_qty DESC
-What is the revenue per product category?,SELECT p.category, SUM(oi.quantity * oi.unit_price) AS revenue FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.category ORDER BY revenue DESC
+What is the total revenue per country?,"SELECT c.country, SUM(o.total_amount) AS total_revenue FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.country ORDER BY total_revenue DESC"
+How many orders did each customer place?,"SELECT c.name, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name ORDER BY order_count DESC"
+Which customers have placed more than 2 orders?,"SELECT c.name, COUNT(o.order_id) AS order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name HAVING COUNT(o.order_id) > 2"
+What is the total quantity sold per product?,"SELECT p.name, SUM(oi.quantity) AS total_qty FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id, p.name ORDER BY total_qty DESC"
+What is the revenue per product category?,"SELECT p.category, SUM(oi.quantity * oi.unit_price) AS revenue FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.category ORDER BY revenue DESC"
 How many unique products were ordered?,SELECT COUNT(DISTINCT product_id) FROM order_items
-Which orders contain more than 3 items?,SELECT order_id, SUM(quantity) AS total_items FROM order_items GROUP BY order_id HAVING SUM(quantity) > 3
+Which orders contain more than 3 items?,"SELECT order_id, SUM(quantity) AS total_items FROM order_items GROUP BY order_id HAVING SUM(quantity) > 3"
 What is the total revenue from completed orders?,SELECT SUM(total_amount) FROM orders WHERE status = 'completed'
-What is the total amount spent by each customer?,SELECT c.name, SUM(o.total_amount) AS total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name ORDER BY total_spent DESC
+What is the total amount spent by each customer?,"SELECT c.name, SUM(o.total_amount) AS total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id, c.name ORDER BY total_spent DESC"
 How many orders were placed in 2024?,SELECT COUNT(*) FROM orders WHERE YEAR(order_date) = 2024
-What is the most expensive product in each category?,SELECT category, name, price FROM products p1 WHERE price = (SELECT MAX(price) FROM products p2 WHERE p2.category = p1.category) ORDER BY category
+What is the most expensive product in each category?,"SELECT category, name, price FROM products p1 WHERE price = (SELECT MAX(price) FROM products p2 WHERE p2.category = p1.category) ORDER BY category"
