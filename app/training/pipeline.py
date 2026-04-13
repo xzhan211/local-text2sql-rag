@@ -59,6 +59,7 @@ def run(
     csv_path: str | Path,
     client: LLMClient | None = None,
     kb: KBManager | None = None,
+    run_id: int | None = None,
 ) -> MetricsReport:
     """
     Run the full training pipeline from a CSV file.
@@ -67,6 +68,9 @@ def run(
         csv_path: Path to CSV with 'sql' column (required) and 'nlq' column (optional).
         client:   LLMClient instance. If None, a new one is created from settings.
         kb:       KBManager instance. If None, a new one is created and indexes loaded.
+        run_id:   Existing training run id to use. If None, a new record is created.
+                  Pass this when the API layer has pre-inserted the run (so the client
+                  can poll status before training finishes).
 
     Returns:
         MetricsReport with all 9 metrics from the eval run.
@@ -100,7 +104,7 @@ def run(
     train_pairs, eval_pairs = _split(pairs)
 
     # ── Step 4: Create training run record ────────────────────────────────────
-    training_run_id = insert_training_run(str(csv_path))
+    training_run_id = run_id if run_id is not None else insert_training_run(str(csv_path))
 
     # ── Step 5: Index 80% into SQLite + Index 1 ───────────────────────────────
     for pair in train_pairs:

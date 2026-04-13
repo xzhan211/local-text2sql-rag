@@ -237,9 +237,19 @@ Files built:
 - `LLMError` on attempt 2 → keep attempt 1 SQL. Better to return a valid low-confidence result than empty string.
 - `_avg_score` duplicated from eval_loop intentionally — sharing would create invisible coupling between two independent pipelines.
 
-### Phase 7 — REST API 🔲
-- `app/api/routes_query.py`, `app/api/routes_train.py`, `app/main.py`
-- **Must-learn:** FastAPI request/response models, background tasks
+### Phase 7 — REST API ✅ DONE
+Files built:
+1. `app/main.py` — FastAPI app, mounts routers, `lifespan` context calls `init_db()` on startup, `GET /health`.
+2. `app/api/routes_query.py` — `POST /api/v1/query` → `{sql, confidence, used_lesson}`. Pydantic request/response models, delegates to `inference.pipeline.query`.
+3. `app/api/routes_train.py` — `POST /api/v1/train/upload` (202, starts BackgroundTask) + `GET /api/v1/train/{id}` (polls SQLite for status/metrics).
+4. `tests/test_api.py` — 13 tests using FastAPI `TestClient`, all passing.
+
+**Key implementation notes:**
+- Training runs as `BackgroundTask`: upload endpoint pre-inserts the run record and returns `{run_id, status: "running"}` immediately. Client polls `GET /train/{id}`.
+- `pipeline.run()` accepts optional `run_id` parameter — if provided, skips `insert_training_run` and uses the pre-inserted record. This keeps the client's run_id consistent throughout.
+- `_run_training` passes `run_id` to `run_pipeline(csv_path, run_id=run_id)` and calls `finish_training_run(..., status="failed")` on any exception.
+- Temp CSV file cleaned up in `finally` block of `_run_training` regardless of success/failure.
+- `lifespan` replaces deprecated `@app.on_event("startup")` pattern.
 
 ### Phase 8 — Tests + Docs 🔲
 - Full pytest suite, docs/
