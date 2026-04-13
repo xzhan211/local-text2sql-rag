@@ -251,8 +251,14 @@ Files built:
 - Temp CSV file cleaned up in `finally` block of `_run_training` regardless of success/failure.
 - `lifespan` replaces deprecated `@app.on_event("startup")` pattern.
 
-### Phase 8 — Tests + Docs 🔲
-- Full pytest suite, docs/
+### Phase 8 — Tests + Docs ✅ DONE
+Files built:
+1. `tests/test_validator.py` — 18 tests for `app/sql/validator.py` (was the only untested module). Covers valid SELECT/WITH, empty input, unparseable SQL, all unsafe statement types, multi-statement rejection.
+2. `docs/architecture.md` — system diagram, inference + training pipeline flows, two-index design, module responsibilities table, SQLite schema, key settings.
+3. `docs/lessons_schema.md` — Lesson JSON schema, field semantics, why trigger must be general, two-step critic→lesson design, error categories, Pydantic model.
+4. `docs/prompt_design.md` — all four prompts, design decisions, temperature rationale, SCHEMA constant purpose.
+
+**Full test suite: 216 tests, all passing.**
 
 ---
 
