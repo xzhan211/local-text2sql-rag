@@ -224,9 +224,18 @@ Files built:
 - Index 2 is populated inside `run_eval` (step 7) — pass@1 failures trigger critic → lesson → `kb.add_lesson`.
 - `save_indexes()` called twice: before eval (checkpoint) and after backfill (final). Checkpoint protects Index 1 work if eval crashes mid-run.
 
-### Phase 6 — Inference Pipeline 🔲
-- `app/inference/pipeline.py`
-- **Must-learn:** confidence thresholding, soft vs hard failure
+### Phase 6 — Inference Pipeline ✅ DONE
+Files built:
+1. `app/inference/pipeline.py` — `query(nlq, client=None, kb=None) -> dict`. Returns `{sql, confidence, used_lesson}`.
+2. `tests/test_inference_pipeline.py` — 17 tests, all passing.
+
+**Key implementation notes:**
+- `confidence = avg(top-k cosine similarity scores)` from Index 1 retrieval — the only proxy for correctness at inference time (no gold SQL available).
+- Retry trigger: `confidence < settings.confidence_threshold OR invalid SQL`. Invalid SQL always worth retrying regardless of confidence.
+- `used_lesson=True` only when Index 2 returned at least one lesson and it was passed to the retry prompt.
+- `LLMError` on attempt 1 → return `{sql: "", confidence: 0.0, used_lesson: False}`. Never raises.
+- `LLMError` on attempt 2 → keep attempt 1 SQL. Better to return a valid low-confidence result than empty string.
+- `_avg_score` duplicated from eval_loop intentionally — sharing would create invisible coupling between two independent pipelines.
 
 ### Phase 7 — REST API 🔲
 - `app/api/routes_query.py`, `app/api/routes_train.py`, `app/main.py`
