@@ -46,28 +46,29 @@ Each training run makes the system smarter — lessons from failures are retriev
 
 ## Setup
 
-**Requirements:** Python 3.11+
+**Requirements:** Python 3.11+, [uv](https://docs.astral.sh/uv/)
 
 ```bash
-# Clone and create virtual environment
+# Install uv (if not already installed)
+pip install uv
+
+# Clone and install dependencies (exact versions from uv.lock)
 git clone https://github.com/xzhan211/local-text2sql-rag.git
 cd local-text2sql-rag
-python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Set your Anthropic API key
 echo "ANTHROPIC_API_KEY=your_key_here" > .env
 ```
+
+`uv sync` creates a virtual environment and installs all dependencies at the exact versions pinned in `uv.lock`, ensuring a reproducible environment across the team.
 
 ---
 
 ## Running the API
 
 ```bash
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 API available at `http://localhost:8000`. Interactive docs at `http://localhost:8000/docs`.
@@ -158,7 +159,7 @@ curl -X POST http://localhost:8000/api/v1/train/upload \
 ## Running Tests
 
 ```bash
-pytest
+uv run pytest
 ```
 
 216 tests across all modules. No real API calls or disk I/O — all external dependencies are mocked.
