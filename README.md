@@ -77,6 +77,32 @@ API available at `http://localhost:8000`. Interactive docs at `http://localhost:
 
 ## API Endpoints
 
+### `POST /api/v1/debug`
+Debug a broken SQL query using the SQL debug agent.
+
+```bash
+curl -X POST http://localhost:8000/api/v1/debug \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nlq": "how many customers signed up last month?",
+    "broken_sql": "SELCT COUNT(*) FORM customers WHERE MONTH(created_at) = MONTH(NOW()) - 1"
+  }'
+```
+
+```json
+{
+  "fixed_sql": "SELECT COUNT(*) FROM customers WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')",
+  "success": true,
+  "iterations": 2,
+  "history": [
+    "iteration 1: called tools ['validate_sql', 'analyze_errors']",
+    "iteration 2: fixed SQL validated successfully"
+  ]
+}
+```
+
+The agent uses the Anthropic tool_use API. It calls `validate_sql` and `analyze_errors` as tools, then proposes a fix. Retries up to `max_iterations` (default: 3) times if the candidate is still invalid. Returns `fixed_sql: null` and `success: false` if it cannot fix the SQL.
+
 ### `GET /health`
 
 ```json
@@ -180,6 +206,7 @@ app/
   evaluation/             — eval loop + metrics
   training/pipeline.py    — training orchestrator
   inference/pipeline.py   — inference orchestrator
+  agent/debug_agent.py    — SQL debug agent (LLM + tools + loop)
   api/                    — FastAPI routes
   main.py                 — app entrypoint
 docs/

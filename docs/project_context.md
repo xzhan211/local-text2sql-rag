@@ -114,7 +114,8 @@ local-text2sql-rag/
 │   ├── main.py                    # FastAPI app entrypoint
 │   ├── api/
 │   │   ├── routes_query.py        # POST /api/v1/query
-│   │   └── routes_train.py        # POST /api/v1/train/upload, GET /api/v1/train/{id}
+│   │   ├── routes_train.py        # POST /api/v1/train/upload, GET /api/v1/train/{id}
+│   │   └── routes_debug.py        # POST /api/v1/debug
 │   ├── core/
 │   │   └── config.py              # Settings (API keys, paths, thresholds)
 │   ├── db/
@@ -135,6 +136,8 @@ local-text2sql-rag/
 │   ├── lessons/
 │   │   ├── critic.py              # analyze(nlq, pred_sql, gold_sql) -> Lesson
 │   │   └── generator.py           # generate_lesson(nlq, pred_sql, gold_sql, errors) -> Lesson
+│   ├── agent/
+│   │   └── debug_agent.py         # run(client, nlq, broken_sql) -> DebugResult (LLM + tools + loop)
 │   ├── evaluation/
 │   │   ├── eval_loop.py           # Main eval loop (pass@1, retry, pass@2, hard_failure)
 │   │   └── metrics.py             # Compute + report all metrics
@@ -251,6 +254,23 @@ Files built:
 - Temp CSV file cleaned up in `finally` block of `_run_training` regardless of success/failure.
 - `lifespan` replaces deprecated `@app.on_event("startup")` pattern.
 
+### Phase 9 — SQL Debug Agent ✅ DONE
+Files built:
+1. `app/llm/claude_client.py` — added `complete_with_tools(system, messages, tools) -> Message`. Returns the raw Message object (not str) so the agent can inspect `stop_reason` and iterate over `ToolUseBlock` / `TextBlock` content. Typed with `anthropic.types.MessageParam` and `anthropic.types.ToolParam` to satisfy Pylance.
+2. `app/agent/__init__.py` — empty package marker.
+3. `app/agent/debug_agent.py` — `run(client, nlq, broken_sql, max_iterations=3) -> DebugResult`. Two tools: `validate_sql` and `analyze_errors`. `_dispatch_tool` is a closure inside `run()` capturing `client` and `nlq`. Loop terminates on: valid SQL, "GIVE_UP", or `max_iterations` exhausted.
+4. `app/api/routes_debug.py` — `POST /api/v1/debug`. Registered in `app/main.py`.
+5. `tests/test_debug_agent.py` — 31 tests covering: fence stripping, tool dispatch, convergence, tool-use turns, retries, exhaustion, give-up, history tracking, LLMError propagation, API route shape.
+
+**Full test suite: 247 tests, all passing.**
+
+**Key implementation notes:**
+- Two tools only: `validate_sql` and `analyze_errors`. No `fix_sql` tool — the LLM proposes the fix in a `TextBlock` after observing tool results. This is the authentic Agent pattern.
+- `analyze_errors` passes `broken_sql` as both `pred_sql` and `gold_sql` to `critic.analyze()`. No gold SQL is available in the debug context — the critic identifies internal issues (syntax, wrong functions) rather than semantic diff.
+- Tool-use turns do not increment the iteration counter — only `end_turn` turns (where the LLM proposes a SQL candidate) count.
+- `DebugResult.history` records one entry per event (tool call or fix attempt) for observability.
+- `LLMError` propagates out of `run()` — the API route caller handles it.
+
 ### Phase 8 — Tests + Docs ✅ DONE
 Files built:
 1. `tests/test_validator.py` — 18 tests for `app/sql/validator.py` (was the only untested module). Covers valid SELECT/WITH, empty input, unparseable SQL, all unsafe statement types, multi-statement rejection.
@@ -321,6 +341,7 @@ llm_retry_temperature= 0.3    # retry with lessons
 POST /api/v1/query              → {sql, confidence, used_lesson}
 POST /api/v1/train/upload       → {run_id, status}
 GET  /api/v1/train/{id}         → {run_id, status, metrics}
+POST /api/v1/debug              → {fixed_sql, success, iterations, history}
 GET  /health                    → {status: "ok"}
 ```
 

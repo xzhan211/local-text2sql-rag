@@ -12,9 +12,13 @@ Design decisions:
   - complete() takes system + human separately — matching the Claude Messages API
     structure. This pairs naturally with the (system, human) tuples returned by
     prompts.py builder functions.
-  - Markdown fence stripping is done here, not in generator.py. The client is the
-    last place that touches raw API output; stripping here means every caller gets
-    a clean string with no fences regardless of which prompt was used.
+  - complete_with_tools() is the agentic variant. It accepts a multi-turn message
+    list and a tools definition, and returns the raw Message object so the caller
+    can inspect stop_reason and iterate over ToolUseBlock / TextBlock content.
+    It does NOT strip fences — the agent handles that itself on the final SQL candidate.
+  - Markdown fence stripping is done here (for complete()), not in generator.py.
+    The client is the last place that touches raw API output; stripping here means
+    every caller gets a clean string with no fences regardless of which prompt was used.
   - LLMError wraps all anthropic exceptions. This keeps pipeline code free of
     Anthropic-specific exception types — pipelines catch LLMError only.
   - No module-level Anthropic client singleton. Unlike sentence-transformers (300MB
@@ -93,6 +97,49 @@ class LLMClient:
             if text_block is None:
                 raise LLMError("Claude response contained no text block")
             return self._strip_fences(text_block.text)
+        except anthropic.APIError as e:
+            raise LLMError(f"Claude API call failed: {e}", cause=e) from e
+
+    def complete_with_tools(
+        self,
+        system: str,
+        messages: list[anthropic.types.MessageParam],
+        tools: list[anthropic.types.ToolParam],
+        temperature: float = 0.0,
+    ) -> anthropic.types.Message:
+        """
+        Send a multi-turn conversation with tool definitions to Claude.
+
+        Used by the debug agent loop. Unlike complete(), this method:
+          - Accepts a full message list (multi-turn conversation history).
+          - Accepts a tools definition list (JSON Schema format).
+          - Returns the raw Message object, not a plain string, so the caller
+            can inspect stop_reason ("tool_use" vs "end_turn") and iterate
+            over ToolUseBlock / TextBlock content blocks.
+          - Does NOT strip markdown fences — the agent handles that selectively
+            on the final SQL candidate only.
+
+        Args:
+            system:      The system prompt.
+            messages:    Conversation history as a list of MessageParam objects.
+            tools:       Tool definitions as a list of ToolParam objects.
+            temperature: Sampling temperature. Default 0.0 for deterministic output.
+
+        Returns:
+            The raw anthropic.types.Message object.
+
+        Raises:
+            LLMError: wraps any anthropic.APIError subclass.
+        """
+        try:
+            return self._client.messages.create(
+                model=settings.llm_model,
+                max_tokens=1024,
+                temperature=temperature,
+                system=system,
+                messages=messages,
+                tools=tools,
+            )
         except anthropic.APIError as e:
             raise LLMError(f"Claude API call failed: {e}", cause=e) from e
 

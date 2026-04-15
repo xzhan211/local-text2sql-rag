@@ -37,8 +37,8 @@ htmlcov/
 *.swp
 *.swo
 
-# Claude Code local settings
-.claude/
+# Claude Code — share team settings but not personal/local config
+.claude/settings.local.json
 
 # macOS
 .DS_Store

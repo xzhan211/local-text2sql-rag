@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/zhangxiaoyang/workspace/git_base/local-text2sql-rag && uv run pytest -q --tb=short 2>&1 | tail -20"
+          }
+        ]
+      }
+    ]
+  }
+}
